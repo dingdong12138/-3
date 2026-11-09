@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>高浓度陪伴戒断测试：你的情绪依赖指数有多高？</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Noto Serif SC"', 'serif'],
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#8B7355',
+                        secondary: '#D4C5B5',
+                        accent: '#B8A08A',
+                        warm: '#F8F5F2',
+                        dark: '#3D3D3D',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: linear-gradient(135deg, #F8F5F2 0%, #EDE8E3 100%);
+            min-height: 100vh;
+        }
+        .option-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 115, 85, 0.15);
+        }
+        .option-card.selected {
+            background: linear-gradient(135deg, #8B7355 0%, #B8A08A 100%);
+            color: white;
+            border-color: #8B7355;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .progress-bar {
+            transition: width 0.4s ease;
+        }
+        .result-number {
+            background: linear-gradient(135deg, #8B7355, #B8A08A);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="font-sans text-dark antialiased">
+    <div class="max-w-lg mx-auto min-h-screen px-5 py-8 flex flex-col">
+        
+        <!-- 开始页面 -->
+        <div id="startPage" class="flex-1 flex flex-col justify-center fade-in">
+            <div class="text-center mb-10">
+                <div class="inline-block px-4 py-1.5 bg-secondary/30 rounded-full text-primary text-sm font-medium mb-6">
+                    依恋心理 · 戒断评估
+                </div>
+                <h1 class="font-serif text-2xl md:text-3xl font-bold text-dark mb-4 leading-tight">
+                    高浓度陪伴戒断测试<br>
+                    <span class="text-primary">你的情绪依赖指数有多高？</span>
+                </h1>
+                <p class="text-gray-500 text-sm md:text-base leading-relaxed max-w-xs mx-auto">
+                    18道深度问题，解析你在亲密关系中的依恋模式<br>
+                    测算心理年龄与真实年龄的差值
+                </p>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6 shadow-sm border border-white/50 mb-8">
+                <label class="block text-sm text-gray-600 mb-2 font-medium">请输入你的实际年龄</label>
+                <input type="number" id="ageInput" min="12" max="80" placeholder="例如：25" 
+                    class="w-full px-4 py-3 bg-white/80 border border-secondary/50 rounded-xl text-center text-lg font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+            </div>
+            
+            <button onclick="startTest()" 
+                class="w-full py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium text-lg shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-[0.98]">
+                开始测试
+            </button>
+            
+            <p class="text-center text-xs text-gray-400 mt-6">
+                本测试仅供娱乐参考 · 结果不作专业诊断依据
+            </p>
+        </div>
+
+        <!-- 答题页面 -->
+        <div id="quizPage" class="hidden flex-1 flex flex-col">
+            <!-- 进度条 -->
+            <div class="mb-6">
+                <div class="flex justify-between text-xs text-gray-500 mb-2">
+                    <span id="questionNum">第 1 题</span>
+                    <span id="progressText">1 / 18</span>
+                </div>
+                <div class="h-1.5 bg-secondary/30 rounded-full overflow-hidden">
+                    <div id="progressBar" class="progress-bar h-full bg-gradient-to-r from-primary to-accent rounded-full" style="width: 5.56%"></div>
+                </div>
+            </div>
+
+            <!-- 题目区域 -->
+            <div class="flex-1 flex flex-col justify-center">
+                <div id="questionContainer" class="fade-in">
+                    <h2 id="questionText" class="font-serif text-xl md:text-2xl font-semibold mb-8 leading-relaxed text-dark">
+                        题目内容
+                    </h2>
+                    
+                    <div id="optionsContainer" class="space-y-3">
+                        <!-- 选项动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="mt-8 flex gap-3">
+                <button id="prevBtn" onclick="prevQuestion()" disabled
+                    class="flex-1 py-3.5 border border-secondary rounded-xl font-medium text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary/20 transition-all">
+                    上一题
+                </button>
+                <button id="nextBtn" onclick="nextQuestion()" disabled
+                    class="flex-1 py-3.5 bg-gradient-to-r from-primary to-accent text-white rounded-xl font-medium shadow-md shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg transition-all">
+                    下一题
+                </button>
+            </div>
+        </div>
+
+        <!-- 结果页面 -->
+        <div id="resultPage" class="hidden fade-in">
+            <div class="text-center mb-8 pt-4">
+                <p class="text-sm text-gray-500 mb-2">你的情绪依赖指数</p>
+                <div class="result-number font-serif text-6xl font-bold mb-2" id="dependencyScore">0%</div>
+                <div class="inline-block px-4 py-1.5 bg-primary/10 rounded-full text-primary text-sm font-medium" id="dependencyLevel">
+                    评级
+                </div>
+            </div>
+
+            <!-- 年龄对比卡片 -->
+            <div class="glass-card rounded-2xl p-6 shadow-sm border border-white/50 mb-6">
+                <h3 class="font-serif text-lg font-semibold mb-4 text-center">年龄维度分析</h3>
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">实际年龄</p>
+                        <p class="text-2xl font-semibold text-dark" id="realAge">—</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">依恋心理年龄</p>
+                        <p class="text-2xl font-semibold text-primary" id="mentalAge">—</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">年龄差值</p>
+                        <p class="text-2xl font-semibold" id="ageDiff">—</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 text-center mt-4" id="ageInterpretation">
+                    年龄差值解读
+                </p>
+            </div>
+
+            <!-- 详细分析 -->
+            <div class="space-y-5 mb-8">
+                <div class="glass-card rounded-2xl p-6 shadow-sm border border-white/50">
+                    <h3 class="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="w-1 h-5 bg-primary rounded-full"></span>
+                        核心特征分析
+                    </h3>
+                    <p class="text-sm text-gray-600 leading-relaxed" id="featureAnalysis">
+                        分析内容
+                    </p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 shadow-sm border border-white/50">
+                    <h3 class="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="w-1 h-5 bg-accent rounded-full"></span>
+                        思维模式深度解析
+                    </h3>
+                    <p class="text-sm text-gray-600 leading-relaxed" id="mindAnalysis">
+                        分析内容
+                    </p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 shadow-sm border border-white/50">
+                    <h3 class="font-serif text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span class="w-1 h-5 bg-secondary rounded-full"></span>
+                        专属戒断建议
+                    </h3>
+                    <p class="text-sm text-gray-600 leading-relaxed" id="adviceText">
+                        建议内容
+                    </p>
+                </div>
+            </div>
+
+            <button onclick="restartTest()" 
+                class="w-full py-4 border border-primary text-primary rounded-xl font-medium text-lg hover:bg-primary/5 transition-all mb-4">
+                重新测试
+            </button>
+            
+            <p class="text-center text-xs text-gray-400 pb-4">
+                先把自己还给自己，再遇见更好的陪伴
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 18道测试题，A=4分(高依赖) B=3分 C=2分 D=1分(低依赖)
+        const questions = [
+            {
+                question: "结束一段高浓度陪伴相处后，你通常需要多久能回归正常生活节奏？",
+                options: [
+                    { text: "至少一周以上，很久都缓不过来", score: 4 },
+                    { text: "三四天，情绪会持续低落", score: 3 },
+                    { text: "一两天，稍微调整就好了", score: 2 },
+                    { text: "分开当天就能切换回自己的状态", score: 1 }
+                ]
+            },
+            {
+                question: "分开之后，你会反复翻看聊天记录、合照或者相处时的视频吗？",
+                options: [
+                    { text: "经常忍不住，翻来覆去看好几遍", score: 4 },
+                    { text: "一天会看好几次，控制不住", score: 3 },
+                    { text: "偶尔会翻一下，但不会沉迷", score: 2 },
+                    { text: "几乎不会，过去了就过去了", score: 1 }
+                ]
+            },
+            {
+                question: "分开后你是否出现过生理性情绪反应？（莫名流泪、胸闷、失眠、食欲下降）",
+                options: [
+                    { text: "经常出现，反应很明显", score: 4 },
+                    { text: "偶尔会有，情绪低落时伴随", score: 3 },
+                    { text: "很少有，只是心里有点空", score: 2 },
+                    { text: "完全没有，情绪很平稳", score: 1 }
+                ]
+            },
+            {
+                question: "当脑子里不停回放相处细节时，你能控制住自己停下来吗？",
+                options: [
+                    { text: "完全控制不住，会越想越深", score: 4 },
+                    { text: "很难控制，总要想很久才能停下", score: 3 },
+                    { text: "刻意转移注意力的话可以停下", score: 2 },
+                    { text: "很容易就能抽离，不会陷进去", score: 1 }
+                ]
+            },
+            {
+                question: "对方半天没有回复消息，你的状态是？",
+                options: [
+                    { text: "坐立难安，一直盯着手机等回复", score: 4 },
+                    { text: "心里很惦记，会忍不住发好几条", score: 3 },
+                    { text: "有点在意，但会先忙自己的事", score: 2 },
+                    { text: "很正常，各自忙各自的就好", score: 1 }
+                ]
+            },
+            {
+                question: "高浓度陪伴结束后，你会觉得生活突然空了一大块吗？",
+                options: [
+                    { text: "非常强烈，觉得做什么都没意义", score: 4 },
+                    { text: "会有明显的空虚感，提不起劲", score: 3 },
+                    { text: "有点不适应，但很快能找到事做", score: 2 },
+                    { text: "完全不会，自己的生活本来就很充实", score: 1 }
+                ]
+            },
+            {
+                question: "你会不会为了多和对方待在一起，推掉原本计划好的事？",
+                options: [
+                    { text: "经常会，陪伴对方优先级最高", score: 4 },
+                    { text: "多数时候会，觉得陪伴更重要", score: 3 },
+                    { text: "偶尔会，看事情的重要程度", score: 2 },
+                    { text: "基本不会，有自己的原则和安排", score: 1 }
+                ]
+            },
+            {
+                question: "独处的时候，你的注意力大多放在哪里？",
+                options: [
+                    { text: "几乎都在想对方，想和对方有关的事", score: 4 },
+                    { text: "大部分时间会想到对方", score: 3 },
+                    { text: "一半想对方，一半做自己的事", score: 2 },
+                    { text: "专注在自己的生活和兴趣上", score: 1 }
+                ]
+            },
+            {
+                question: "遇到开心或者难过的事，你的第一反应是？",
+                options: [
+                    { text: "立刻分享给对方，只想和对方说", score: 4 },
+                    { text: "优先告诉对方，其次才是朋友", score: 3 },
+                    { text: "看情况，重要的事才会说", score: 2 },
+                    { text: "先自己消化，不一定会告诉对方", score: 1 }
+                ]
+            },
+            {
+                question: "分开后，你会忍不住窥探对方的社交平台动态吗？",
+                options: [
+                    { text: "经常反复刷，不放过任何细节", score: 4 },
+                    { text: "一天会看好几次，想知道对方在干嘛", score: 3 },
+                    { text: "偶尔会点进去看一下", score: 2 },
+                    { text: "完全不会，没什么好关注的", score: 1 }
+                ]
+            },
+            {
+                question: "你觉得自己的情绪好坏，多大程度上由对方决定？",
+                options: [
+                    { text: "几乎完全被对方的态度影响", score: 4 },
+                    { text: "很大程度上会受对方影响", score: 3 },
+                    { text: "有一定影响，但自己能调节", score: 2 },
+                    { text: "情绪由自己掌控，和别人无关", score: 1 }
+                ]
+            },
+            {
+                question: "和对方分离的时候，你会产生「被丢下」的不安感吗？",
+                options: [
+                    { text: "非常强烈，总害怕对方会离开", score: 4 },
+                    { text: "会有不安，需要对方反复确认", score: 3 },
+                    { text: "偶尔会有，但很快能平复", score: 2 },
+                    { text: "完全不会，对关系很有安全感", score: 1 }
+                ]
+            },
+            {
+                question: "你更认同以下哪种说法？",
+                options: [
+                    { text: "有人陪伴的人生才是完整的", score: 4 },
+                    { text: "好的陪伴能治愈生活的一切", score: 3 },
+                    { text: "陪伴是加分项，不是必需品", score: 2 },
+                    { text: "比起陪伴，我更看重个人成长", score: 1 }
+                ]
+            },
+            {
+                question: "你会反复琢磨对方说过的话、某个动作，猜测背后的含义吗？",
+                options: [
+                    { text: "经常这样，一点点细节都要反复想", score: 4 },
+                    { text: "偶尔会，在意的时候会想很久", score: 3 },
+                    { text: "很少会，觉得没必要想太多", score: 2 },
+                    { text: "从来不会，对方说什么就是什么", score: 1 }
+                ]
+            },
+            {
+                question: "如果没有对方的消息，你做事情会分心吗？",
+                options: [
+                    { text: "完全静不下心，什么都做不进去", score: 4 },
+                    { text: "容易走神，效率会明显下降", score: 3 },
+                    { text: "有点影响，但整体还能完成", score: 2 },
+                    { text: "完全不受影响，该干嘛干嘛", score: 1 }
+                ]
+            },
+            {
+                question: "在一段亲密关系里，你更倾向于扮演什么角色？",
+                options: [
+                    { text: "依附对方的人，希望对方带着我走", score: 4 },
+                    { text: "依赖对方的人，喜欢被对方照顾", score: 3 },
+                    { text: "互相依靠，彼此独立又亲密", score: 2 },
+                    { text: "非常独立，习惯自己解决问题", score: 1 }
+                ]
+            },
+            {
+                question: "结束密集陪伴后，你能快速投入到自己的工作/学习中吗？",
+                options: [
+                    { text: "完全不行，脑子一直飘着", score: 4 },
+                    { text: "很难进入状态，要缓好几天", score: 3 },
+                    { text: "调整一两天就能恢复状态", score: 2 },
+                    { text: "立刻就能切换回专注模式", score: 1 }
+                ]
+            },
+            {
+                question: "如果这段关系突然结束，你觉得自己会怎么样？",
+                options: [
+                    { text: "天塌下来一样，不知道怎么活下去", score: 4 },
+                    { text: "会崩溃，很长时间都走不出来", score: 3 },
+                    { text: "会难过一阵子，但慢慢能恢复", score: 2 },
+                    { text: "难过之后，照样好好生活", score: 1 }
+                ]
+            }
+        ];
+
+        let currentQuestion = 0;
+        let answers = new Array(18).fill(null);
+        let realAge = 0;
+
+        function startTest() {
+            const ageInput = document.getElementById('ageInput').value;
+            if (!ageInput || ageInput < 12 || ageInput > 80) {
+                alert('请输入有效的年龄（12-80岁）');
+                return;
+            }
+            realAge = parseInt(ageInput);
+            document.getElementById('startPage').classList.add('hidden');
+            document.getElementById('quizPage').classList.remove('hidden');
+            document.getElementById('quizPage').classList.add('flex');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            const container = document.getElementById('questionContainer');
+            container.classList.remove('fade-in');
+            void container.offsetWidth;
+            container.classList.add('fade-in');
+
+            document.getElementById('questionNum').textContent = `第 ${currentQuestion + 1} 题`;
+            document.getElementById('progressText').textContent = `${currentQuestion + 1} / 18`;
+            document.getElementById('progressBar').style.width = `${((currentQuestion + 1) / 18) * 100}%`;
+            document.getElementById('questionText').textContent = q.question;
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((opt, index) => {
+                const div = document.createElement('div');
+                div.className = `option-card p-4 bg-white/80 border border-secondary/50 rounded-xl cursor-pointer ${answers[currentQuestion] === index ? 'selected' : ''}`;
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 flex items-center justify-center rounded-full border text-sm font-medium flex-shrink-0 
+                            ${answers[currentQuestion] === index ? 'border-white/50 text-white' : 'border-secondary text-primary'}">
+                            ${String.fromCharCode(65 + index)}
+                        </span>
+                        <span class="text-sm md:text-base">${opt.text}</span>
+                    </div>
+                `;
+                div.onclick = () => selectOption(index);
+                optionsContainer.appendChild(div);
+            });
+
+            document.getElementById('prevBtn').disabled = currentQuestion === 0;
+            document.getElementById('nextBtn').disabled = answers[currentQuestion] === null;
+            document.getElementById('nextBtn').textContent = currentQuestion === 17 ? '查看结果' : '下一题';
+        }
+
+        function selectOption(index) {
+            answers[currentQuestion] = index;
+            renderQuestion();
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                renderQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            if (answers[currentQuestion] === null) return;
+            
+            if (currentQuestion < 17) {
+                currentQuestion++;
+                renderQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            // 计算总分
+            let totalScore = 0;
+            answers.forEach((ans, i) => {
+                totalScore += questions[i].options[ans].score;
+            });
+
+            // 换算为0-100%依赖指数 (最低18分，最高72分)
+            const percentage = Math.round(((totalScore - 18) / 54) * 100);
+
+            // 计算心理年龄
+            let mentalAge;
+            if (percentage >= 80) {
+                mentalAge = Math.max(14, realAge - 7);
+            } else if (percentage >= 60) {
+                mentalAge = Math.max(14, realAge - 4);
+            } else if (percentage >= 40) {
+                mentalAge = realAge - 1;
+            } else if (percentage >= 20) {
+                mentalAge = realAge + 3;
+            } else {
+                mentalAge = Math.min(60, realAge + 6);
+            }
+
+            const ageDiff = mentalAge - realAge;
+
+            // 评级与分析文案
+            let level, featureAnalysis, mindAnalysis, adviceText, ageInterpretation;
+            
+            if (percentage >= 80) {
+                level = '重度情绪依赖 · 戒断高危型';
+                featureAnalysis = '你属于典型的「高依恋体质」，对高浓度陪伴的戒断反应非常强烈。一旦进入深度陪伴状态，你会快速将情绪重心全部投射到对方身上，分离会触发你明显的「分离痛苦」反应——不仅心理上空虚失落，还会伴随生理性的低落、失眠甚至胸闷流泪。你很容易在亲密关系里失去自我边界，把对方当成自己情绪的唯一支柱。';
+                mindAnalysis = '你的思维模式呈现出典型的焦虑型依恋特征：对被抛弃有深层恐惧，习惯通过对方的陪伴和回应来确认自我价值。高浓度陪伴会让你的大脑持续分泌多巴胺，形成强烈的奖赏回路，一旦中断就会出现类似「戒断反应」的不适感。同时你有严重的反刍思维倾向，会反复咀嚼相处细节，越想越陷进去，大量消耗内在能量。';
+                adviceText = '建议严格执行三步戒断法：第一，给回忆「贴标签」，每次开始反刍时立刻默念「这是回放，不是现实」，停止深度思考；第二，物理隔断，暂时关闭对方的社交动态入口，不主动联系，给自己重建安全感的空间；第三，用中等强度的任务填满空白时间，运动、工作、社交都可以，用新鲜刺激替代旧的奖赏回路。记住：空虚不等于爱，你只是还没适应和自己相处。';
+                ageInterpretation = '你的依恋心理年龄远小于实际年龄，在感情里还带着少年般的纯粹与执念，容易把陪伴当成全部。';
+            } else if (percentage >= 60) {
+                level = '中度情绪依赖 · 感性上头型';
+                featureAnalysis = '你是感性大于理性的类型，很容易在陪伴中上头。虽然有基本的自我意识，但情绪还是会被关系牵着走。高浓度陪伴结束后，你会有明显的失落和空虚感，需要几天时间才能慢慢抽离。你偶尔也会反省自己是不是太投入了，但下一次遇到温暖的陪伴，还是会忍不住全情投入。';
+                mindAnalysis = '你的思维处在「感性主导、理性旁观」的状态。你心里清楚过度依赖不好，但情绪上来的时候还是控制不住。你对陪伴的渴望本质上是对「被重视、被看见」的渴望，高质量的陪伴会让你感受到强烈的被爱感。你共情能力很强，也正因此更容易被关系中的情绪所裹挟。';
+                adviceText = '建议你建立「陪伴边界感」。即使在高浓度相处中，也要每天保留1-2小时完全属于自己的时间，维持原本的生活节奏。分开后如果出现反刍，立刻起身做一件需要专注的小事，比如做饭、整理房间、出门散步。不用强迫自己立刻抽离，给自己3天缓冲期，逐步回归正常生活就好。';
+                ageInterpretation = '你的依恋心理年龄略小于实际年龄，对待感情还有几分天真和柔软，容易因为陪伴而动心。';
+            } else if (percentage >= 40) {
+                level = '轻度情绪依赖 · 柔软共情型';
+                featureAnalysis = '你是情绪健康度很高的类型。你会享受陪伴的美好，分开时也会有不舍和失落，但始终保有基本的理智。你能感受到情绪的波动，但不会被它彻底淹没，通常一两天就能调整过来。你有清晰的自我生活框架，陪伴只是锦上添花，不会颠覆你的人生节奏。';
+                mindAnalysis = '你的思维模式是「感性与理性平衡」的典范。你既拥有投入去爱的能力，也懂得适时抽离。你明白陪伴是阶段性的，每个人终究是独立的个体。这种成熟的心态来自于稳定的自我价值感——你知道自己的价值不需要靠别人的陪伴来证明。';
+                adviceText = '继续保持现在的状态就很好。可以在每次陪伴结束后给自己安排一个「过渡仪式」，比如看一场电影、吃一顿喜欢的饭，用一个明确的节点给这段时光画上句号。这样既能好好享受相处的过程，也能体面地回归自己的生活。';
+                ageInterpretation = '你的依恋心理年龄与实际年龄基本相符，心智成熟度和情感阅历匹配度很高。';
+            } else if (percentage >= 20) {
+                level = '清醒独立型 · 自洽稳重型';
+                featureAnalysis = '你在亲密关系里非常清醒，很少会对陪伴产生强烈依赖。你有自己完整的生活体系和价值排序，陪伴只是你众多生活选项中的一个。你享受高质量的相处，但分开后也能快速回到自己的轨道。对你来说，舒服、平等、各自成长比时刻黏在一起更重要。';
+                mindAnalysis = '你的思维模式高度理性，有着很强的自我主体性。你不会把幸福的主动权交到别人手上，始终把人生的掌控权握在自己手里。你对陪伴的需求很低，因为你自己就能给自己足够的安全感和充实感。这种成熟可能来自过往的经历，也可能源于你天生独立的性格。';
+                adviceText = '你已经拥有了很强的自洽能力，接下来可以试着练习「深度联结」。不必时刻保持清醒和独立，偶尔示弱、偶尔依赖，并不会让你失去自我。好的关系既需要独立的空间，也需要适度的依恋。允许自己偶尔上头，也是一种完整的体验。';
+                ageInterpretation = '你的依恋心理年龄略大于实际年龄，对待感情有着超越年龄的通透和淡然。';
+            } else {
+                level = '极致自律型 · 内核强大型';
+                featureAnalysis = '你可以说是「情绪依赖绝缘体」。陪伴对你来说更像一种生活调剂，而非必需品。你内心非常强大，一个人也能把日子过得有声有色。你很难对谁产生强烈的依恋，也从不觉得谁是不可替代的。对你而言，有陪伴很好，没有也完全没关系，你的快乐从来都只掌握在自己手里。';
+                mindAnalysis = '你的思维模式极度理性，对亲密关系有着很强的「祛魅」视角。你看透了陪伴的本质，不相信过度黏连的浪漫，更追求现实层面的匹配和舒适。你有极强的边界感和自我保护机制，不轻易让别人走进你的内心深处。这是一种非常安全的活法，但偶尔也会让人觉得有点疏离。';
+                adviceText = '保持内核强大没有错，但可以试着给生活留一点「非理性」的空间。人生很多美好的体验都发生在理智之外。不必刻意抗拒心动，也不必预设所有结局。允许自己偶尔沉浸、偶尔依赖，并不会削弱你的力量，反而会让你更完整。';
+                ageInterpretation = '你的依恋心理年龄远超实际年龄，对亲密关系的看法通透得像个过来人。';
+            }
+
+            // 更新DOM
+            document.getElementById('dependencyScore').textContent = percentage + '%';
+            document.getElementById('dependencyLevel').textContent = level;
+            document.getElementById('realAge').textContent = realAge + '岁';
+            document.getElementById('mentalAge').textContent = mentalAge + '岁';
+            
+            const diffEl = document.getElementById('ageDiff');
+            if (ageDiff > 0) {
+                diffEl.textContent = '+' + ageDiff;
+                diffEl.className = 'text-2xl font-semibold text-primary';
+            } else if (ageDiff < 0) {
+                diffEl.textContent = ageDiff;
+                diffEl.className = 'text-2xl font-semibold text-rose-400';
+            } else {
+                diffEl.textContent = '0';
+                diffEl.className = 'text-2xl font-semibold text-gray-600';
+            }
+
+            document.getElementById('ageInterpretation').textContent = ageInterpretation;
+            document.getElementById('featureAnalysis').textContent = featureAnalysis;
+            document.getElementById('mindAnalysis').textContent = mindAnalysis;
+            document.getElementById('adviceText').textContent = adviceText;
+
+            document.getElementById('quizPage').classList.add('hidden');
+            document.getElementById('quizPage').classList.remove('flex');
+            document.getElementById('resultPage').classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function restartTest() {
+            currentQuestion = 0;
+            answers.fill(null);
+            realAge = 0;
+            document.getElementById('ageInput').value = '';
+            document.getElementById('resultPage').classList.add('hidden');
+            document.getElementById('startPage').classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        // 键盘支持
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('quizPage').classList.contains('hidden')) return;
+            if (e.key >= '1' && e.key <= '4') {
+                selectOption(parseInt(e.key) - 1);
+            } else if (e.key === 'Enter') {
+                nextQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
